@@ -6,11 +6,10 @@ A portfolio prototype for **privacy-preserving financial eligibility checks** us
 genuine Zero-Knowledge Proofs (ZKPs), written in [Noir](https://noir-lang.org) and
 proven with [Barretenberg](https://github.com/AztecProtocol/aztec-packages/tree/master/barretenberg).
 
-> **Status: Milestone 4 — application interfaces.** The full workflow runs in the
-> browser: an issuer signs a credential, the holder reviews a request, consents and
-> **generates the proof locally**, and an independent verifier checks it with bb.js.
-> Hardening (request expiry, audit logs, access control, security test suite) is
-> Milestone 5.
+> **Status: Milestone 5 — hardened verification.** The full workflow runs in the
+> browser (the holder **generates the proof locally**), and the verifier enforces
+> single-use, expiring requests with persistent state, a privacy-conscious audit log,
+> demo role tokens and rate limits. See the [security model](docs/security-model.md).
 > See
 > [`docs/development-log.md`](docs/development-log.md) for what has actually been built and tested.
 
@@ -51,7 +50,7 @@ Issuer ──signed credential──▶ Holder ──proof + public inputs──
 | 2 | Issuer credential prototype (signing) | ✅ Done (ECDSA P-256, not yet in-circuit) |
 | 3 | Credential-aware ZKP | ✅ Done |
 | 4 | Holder / issuer / verifier UI | ✅ Done |
-| 5 | Independent verification API (replay, expiry) | ⏳ Planned |
+| 5 | Independent verification API (replay, expiry) | ✅ Done |
 | 6 | Security & performance tests | ⏳ Planned |
 | 7 | Portfolio release | ⏳ Planned |
 
@@ -75,7 +74,7 @@ npm run keygen                                   # demo issuer key (git-ignored)
 npm run issue -- --subject 1001 --income 950000 --out demo.credential.json
 ```
 
-Design docs: [credential format](docs/credential-format.md) ·
+Design docs: [security model](docs/security-model.md) · [credential format](docs/credential-format.md) ·
 [signature scheme evaluation](docs/signature-scheme-evaluation.md)
 
 ## Run the demo
@@ -85,6 +84,7 @@ committed compiled circuit.
 
 ```bash
 npm install
+npm run setup       # creates .env with random demo role tokens (git-ignored)
 npm run issuer      # terminal 1: issuer on :4001 (creates a demo key in apps/issuer-demo/keys/, git-ignored)
 npm run verifier    # terminal 2: verifier on :4002 (trusts the issuer's published key)
 npm run web         # terminal 3: http://localhost:5173

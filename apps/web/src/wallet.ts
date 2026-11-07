@@ -43,6 +43,12 @@ export const wallet = {
     write(CRED_KEY, read<Credential>(CRED_KEY).filter((x) => x.claims.credentialId !== credentialId));
   },
   history: () => read<HistoryEntry>(HIST_KEY),
+  /** Distinct thresholds this verifier asked about in the last `hours` (probing signal). */
+  recentThresholds(verifierName: string, hours = 24): string[] {
+    const since = Date.now() - hours * 3_600_000;
+    const seen = read<HistoryEntry>(HIST_KEY).filter((h) => h.verifierName === verifierName && Date.parse(h.at) >= since).map((h) => h.minimumIncome);
+    return [...new Set(seen)];
+  },
   addHistory(e: HistoryEntry) {
     write(HIST_KEY, [e, ...read<HistoryEntry>(HIST_KEY)].slice(0, 50));
   },

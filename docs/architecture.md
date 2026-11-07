@@ -1,7 +1,7 @@
 # Architecture
 
-How the parts fit together as of **Milestone 4**. Milestone 5 hardens the verification
-API. This document is updated as milestones land.
+How the parts fit together as of **Milestone 5**. Threats and controls are in
+[security-model.md](security-model.md).
 
 ## Roles and data flow
 
@@ -32,8 +32,26 @@ API. This document is updated as milestones land.
 | Process | Port | Holds |
 |---|---|---|
 | `apps/issuer-demo` (Express) | 4001 | issuer **private key** (file, 0600, git-ignored); never sent to clients |
-| `apps/verifier-api` (Express + bb.js) | 4002 | requests, challenges, results, the trusted issuer key (no incomes) |
+| `apps/verifier-api` (Express + bb.js + SQLite) | 4002 | requests, challenges, decisions and audit log in `data/verifier.sqlite` (public data only), the trusted issuer key |
 | `apps/web` (React + Vite) | 5173 | UI. Holder credentials live in the browser's localStorage (demo) |
+
+## Access control (demo)
+
+| Route | Who | How |
+|---|---|---|
+| `POST /api/issuer/credentials` | issuer | bearer `ISSUER_API_TOKEN` |
+| `GET /api/issuer/public-key` | anyone | public |
+| `POST/GET /api/verifier/requests`, `GET /api/verifier/audit` | verifier | bearer `VERIFIER_API_TOKEN` |
+| `GET /api/verifier/requests/:id`, `POST …/proof`, `POST …/decline` | holder | knowledge of the unguessable request id |
+
+In the demo, the web server's proxy injects the issuer and verifier tokens server-side
+for their portal routes (standing in for real login). Browser code never sees a token.
+
+## Request lifecycle
+
+`PENDING` → exactly one of `ELIGIBLE`, `INVALID`, `NOT_ELIGIBLE` (declined) or `EXPIRED`
+(no answer within `REQUEST_TTL_SECONDS`, default 600). The transition is a single atomic
+SQL update, so concurrent submissions cannot both succeed, and it survives restarts.
 
 The web server sends COOP/COEP headers so the page is cross-origin isolated, which lets
 bb.js use multiple threads (SharedArrayBuffer). The circuit artifact

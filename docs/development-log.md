@@ -349,3 +349,79 @@ including CRS download and engine start-up; later proofs ≈ 3.7 s (CRS cached i
 - The holder wallet stores credentials in plain localStorage (demo only). Delivery from
   issuer to holder is simulated within the same browser.
 - First-proof latency is dominated by the CRS download and WASM start-up.
+
+---
+
+## Milestone 5 — Independent verification API hardening
+
+**Date:** 2026-11-07 · **Branch:** `milestone-5/verification-hardening`
+
+### Done
+
+- **Persistent store** (`apps/verifier-api/src/store.ts`) using Node 22's built-in
+  `node:sqlite` (no new dependency). It stores public data only.
+- **Single-use requests.** A decision is one atomic
+  `UPDATE … WHERE status = 'PENDING'`, so concurrent submissions cannot both succeed,
+  and decisions persist across restarts.
+- **Request expiry** (default 600 s). Checked before and after the (slow) proof
+  verification; late submissions → `410` / `EXPIRED`; stale pending requests expire
+  when listed.
+- **Audit log:** events, request id, outcome, reason, issuer `kid`, and a **proof
+  fingerprint** (truncated SHA-256) instead of the proof. Shown on the verifier dashboard.
+- **Demo access control** (`packages/server-security`):
+  - Bearer role tokens, compared in constant time; services refuse to start with a
+    missing or weak token.
+  - `npm run setup` creates `.env` (0600, git-ignored).
+  - The web proxy injects tokens server-side, only on issuer and verifier routes.
+- **Abuse and probing limits:**
+  - rate limits on issuance (30/min), request creation (30/10 min) and holder
+    submissions (20/min);
+  - thresholds must be multiples of ₹10,000;
+  - the wallet warns when a verifier asks different thresholds within 24 h.
+- **Security headers** on both APIs (`no-store`, `nosniff`, `DENY`, strict CSP); `x-powered-by` removed.
+- **[`docs/security-model.md`](security-model.md):** assets, 12 attacks with their
+  controls and test evidence, and residual risks.
+
+### Tests (actual results)
+
+| Suite | Result |
+|---|---|
+| server-security | 10/10 |
+| issuer-demo (auth, rate limit, headers) | 14/14 |
+| verifier-api API (real proofs) | 7/7 |
+| **verifier-api security suite (real proofs)** | **24/24** |
+| credentials unit / real-proof CLI | 70/70 · 18/18 |
+| web unit | 11/11 |
+| **Browser E2E (Chromium)** | **24/24 checks** |
+| nargo (11 + 6), artifact freshness | pass |
+
+Security suite highlights:
+- 3 concurrent identical submissions → exactly one `200`, two `409`.
+- A proof racing a decline → one decision.
+- Replay after a restart → `409`.
+- A valid proof one second before expiry → accepted; at expiry → `410`.
+- Income field in the payload → `400`, and the request stays pending.
+- 200 KB body → `413`.
+- Thresholds off the ₹10,000 step → `400`; rate limits → `429` (audited).
+- **Byte-level scan of every SQLite file (db, WAL, SHM), the audit log and logs: no
+  income in decimal or field encoding.**
+
+New E2E checks:
+- No `Authorization` header ever leaves the browser, and the built bundle contains no
+  tokens or token names.
+- The probing warning appears.
+- The audit log shows decisions without income.
+- A direct unauthenticated list call gets `401`.
+
+### Design notes
+
+- Bad payloads (`400`) do **not** consume a request, so a third party with the link
+  cannot burn it by posting junk. Valid but failing proofs (`INVALID`) do.
+- The proof fingerprint lets an auditor match a decision to a proof the holder kept,
+  without the verifier storing proofs.
+
+### Known limitations
+
+See [security-model.md §4](security-model.md#4-residual-risks-and-limitations-honest-list):
+in-memory, per-process rate limits; demo token auth instead of user login; no holder
+binding; no revocation; plain-localStorage wallet; probing reduced, not eliminated.
