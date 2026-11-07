@@ -270,3 +270,82 @@ weaken security: it only stops npm auto-installing peer packages.
 - Proving runs through the nargo/bb CLIs; in-browser proving is Milestone 4.
 - Used-challenge tracking, request expiry and the HTTP API are Milestone 5.
 - No holder binding and no revocation (see `credential-format.md` §6).
+
+---
+
+## Milestone 4 — Application interfaces
+
+**Date:** 2026-11-07 · **Branch:** `milestone-4/app-interfaces`
+
+### Browser-proving feasibility (checked first)
+
+`@noir-lang/noir_js` 1.0.0 + `@aztec-foundation/bb.js` 6.0.0 in Node (same WASM as the browser):
+
+- Prove times: 2.9 s with 1 thread, 1.1 s with 4 threads.
+- The bb.js verification key is **byte-identical** to the CLI's.
+- The **native `bb` CLI verifies a bb.js proof**.
+
+Conclusion: feasible, so the EdDSA fallback is not needed.
+
+### Done
+
+- **npm workspaces** (`packages/*`, `apps/*`): one lock file; `.npmrc` moved to the root.
+- **Slim circuit artifact** (10 KB, abi + bytecode) committed for the app.
+  `export-artifact.mjs --check` detects drift from the source.
+- **`apps/issuer-demo`** (Express): publishes the public key and issues credentials.
+  The key stays server-side (auto-generated demo key only outside production), input
+  validation is strict, and logs never contain income.
+- **`apps/verifier-api`** (Express + bb.js):
+  - creates requests with a fresh 248-bit challenge and the verifier's own time;
+  - accepts **exactly** `{proof, publicInputs}` (extra fields such as `income` → 400);
+  - checks public inputs against the request (exact time, own challenge, threshold,
+    trusted issuer), then verifies the proof with bb.js;
+  - one decision per request (409 afterwards); a decline is recorded as `NOT_ELIGIBLE`.
+- **`apps/web`** (React 19 + Vite 8 + Tailwind 4), navy/teal theme:
+  - issuer portal;
+  - verifier dashboard, which polls for results;
+  - holder wallet: credentials, request review ("shared" vs "stays on this device"),
+    an explicit **consent checkbox gating proof generation**, **in-browser proving**, a
+    preview of the exact payload, submit or decline, and a history without incomes.
+
+### Tests (actual results)
+
+| Suite | Result |
+|---|---|
+| credentials unit | 70/70 |
+| credentials real-proof (CLI) | 18/18 |
+| issuer-demo API | 11/11 |
+| verifier-api with real noir_js/bb.js proofs over HTTP | 14/14 |
+| web unit (inputs, precheck, encoding) | 11/11 |
+| **Browser E2E (Chromium, `npm run e2e`)** | **all checks passed, 3 consecutive runs** |
+| Mobile layout (390 px): holder, issuer, verifier | no horizontal overflow |
+| Regression: nargo tests (11 + 6), artifact freshness | pass |
+
+E2E checks:
+- The page is cross-origin isolated.
+- Proving is disabled until consent is given.
+- A real in-browser proof is made and the verifier shows ELIGIBLE.
+- Nothing is sent before the holder clicks submit.
+- Declining a request the holder cannot meet records NOT_ELIGIBLE.
+- Every submission is exactly `{proof, publicInputs}`.
+- The income never appears in any browser→verifier request, nor in issuer or verifier logs.
+
+**In-browser proving (Chromium, 4 threads, this machine):** first proof ≈ 10 s,
+including CRS download and engine start-up; later proofs ≈ 3.7 s (CRS cached in IndexedDB).
+
+### Problems found and fixed
+
+- The E2E harness left **orphaned servers** (killing `npx` did not kill its `node`
+  child). The next run collided with them and got HTTP 502. Fixed by giving each
+  service its own process group and refusing to start if a port is busy.
+- Vite's `defineConfig` has no `test` field; Vitest's is used instead.
+- One E2E assertion was itself wrong: it counted the verifier's own request-creation
+  POST as a holder submission.
+
+### Known limitations (addressed in Milestone 5 unless noted)
+
+- Requests have no expiry yet; storage is in-memory (lost on restart).
+- No audit log; no access control for the issuer and verifier roles.
+- The holder wallet stores credentials in plain localStorage (demo only). Delivery from
+  issuer to holder is simulated within the same browser.
+- First-proof latency is dominated by the CRS download and WASM start-up.

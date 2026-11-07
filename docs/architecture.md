@@ -1,7 +1,7 @@
 # Architecture
 
-How the parts fit together as of **Milestone 3**. Later milestones add the UI (M4) and
-the verification API (M5). This document is updated as they land.
+How the parts fit together as of **Milestone 4**. Milestone 5 hardens the verification
+API. This document is updated as milestones land.
 
 ## Roles and data flow
 
@@ -19,12 +19,26 @@ the verification API (M5). This document is updated as they land.
 |---|---|---|
 | 1. Issue and sign credential | Issuer | `packages/credentials`: `issueCredential()` |
 | 2. Publish public key (`kid`, JWK, circuit coords) | Issuer | `issuerPublicInfo()` |
-| 3. Send request: threshold, current time, random challenge | Verifier | `ProofRequest` (API in M5) |
-| 4. Check credential, build circuit inputs | Holder | `buildCircuitInputs()` |
-| 5. Generate proof | Holder | `circuits/credential-eligibility` with nargo + bb (browser bb.js in M4) |
-| 6. Cryptographic verification | Verifier | `bb verify` (bb.js in M5) |
+| 3. Send request: threshold, current time, random challenge | Verifier | `apps/verifier-api` `POST /api/verifier/requests` |
+| 4. Review request, consent, check credential, build inputs | Holder | `apps/web` holder wallet (`zk/inputs.ts`) |
+| 5. Generate proof **in the browser** | Holder | `apps/web/src/zk/prover.ts` (noir_js + bb.js WebAssembly) |
+| 6. Submit exactly `{proof, publicInputs}` | Holder → Verifier | `POST /api/verifier/requests/:id/proof` |
 | 7. Policy check of public inputs | Verifier | `checkPublicInputs()` |
-| 8. Result: `ELIGIBLE` / `NOT_ELIGIBLE` / `INVALID` | Verifier | M5 |
+| 8. Cryptographic verification | Verifier | bb.js `UltraHonkBackend.verifyProof` |
+| 9. Result: `ELIGIBLE` / `NOT_ELIGIBLE` (declined) / `INVALID` | Verifier | stored per request, shown on the dashboard |
+
+## Processes
+
+| Process | Port | Holds |
+|---|---|---|
+| `apps/issuer-demo` (Express) | 4001 | issuer **private key** (file, 0600, git-ignored); never sent to clients |
+| `apps/verifier-api` (Express + bb.js) | 4002 | requests, challenges, results, the trusted issuer key (no incomes) |
+| `apps/web` (React + Vite) | 5173 | UI. Holder credentials live in the browser's localStorage (demo) |
+
+The web server sends COOP/COEP headers so the page is cross-origin isolated, which lets
+bb.js use multiple threads (SharedArrayBuffer). The circuit artifact
+(`circuits/credential-eligibility/artifact/`) is shared by the browser prover and the
+verifier, and checked against the source with `export-artifact.mjs --check`.
 
 ## What the ZK proof establishes
 
