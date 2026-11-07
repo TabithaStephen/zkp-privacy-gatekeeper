@@ -53,3 +53,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Temporary prover inputs written by scripts/e2e.sh
+e2e_*.toml

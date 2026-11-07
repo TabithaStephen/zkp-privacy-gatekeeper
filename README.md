@@ -6,8 +6,9 @@ A portfolio prototype for **privacy-preserving financial eligibility checks** us
 genuine Zero-Knowledge Proofs (ZKPs), written in [Noir](https://noir-lang.org) and
 proven with [Barretenberg](https://github.com/AztecProtocol/aztec-packages/tree/master/barretenberg).
 
-> **Status: Milestone 0 — repository setup.** No circuits, proofs or application code
-> exist yet. This README describes the *goal*, not completed features. See
+> **Status: Milestone 1 — first real ZKP.** A Noir circuit proves `income >= threshold`
+> with real UltraHonk proofs. Issuer credentials, the API and the UI are **not built yet**.
+> See
 > [`docs/development-log.md`](docs/development-log.md) for what has actually been built and tested.
 
 ## The idea
@@ -42,14 +43,25 @@ Issuer ──signed credential──▶ Holder ──proof + public inputs──
 
 | # | Milestone | Status |
 |---|---|---|
-| 0 | Environment & repository setup | 🔄 In progress |
-| 1 | First real ZKP (income ≥ threshold) | ⏳ Planned |
+| 0 | Environment & repository setup | ✅ Done |
+| 1 | First real ZKP (income ≥ threshold) | ✅ Done (no issuer binding yet) |
 | 2 | Issuer credential prototype (signing) | ⏳ Planned |
 | 3 | Credential-aware ZKP | ⏳ Planned |
 | 4 | Holder / issuer / verifier UI | ⏳ Planned |
 | 5 | Independent verification API (replay, expiry) | ⏳ Planned |
 | 6 | Security & performance tests | ⏳ Planned |
 | 7 | Portfolio release | ⏳ Planned |
+
+## Try it (Milestone 1)
+
+Requires Noir `nargo` 1.0.0 and Barretenberg `bb` 6.0.0. Install instructions are in
+[`circuits/income-eligibility/README.md`](circuits/income-eligibility/README.md).
+
+```bash
+cd circuits/income-eligibility
+nargo test           # circuit unit tests
+./scripts/e2e.sh     # real proof generation + verification + attack checks
+```
 
 ## Planned stack
 
