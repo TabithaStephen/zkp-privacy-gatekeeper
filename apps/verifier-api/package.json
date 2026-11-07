@@ -5,14 +5,15 @@
   "description": "Independent verifier: creates proof requests and verifies UltraHonk proofs with bb.js",
   "type": "module",
   "scripts": {
-    "start": "tsx src/server.ts",
-    "dev": "tsx watch src/server.ts",
+    "start": "tsx --env-file-if-exists=../../.env src/server.ts",
+    "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
     "@aztec-foundation/bb.js": "6.0.0",
     "@zkpg/credentials": "0.1.0",
+    "@zkpg/server-security": "0.1.0",
     "express": "5.3.0"
   },
   "devDependencies": {
