@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Simulated financial issuer: signs fictional ZKPG_INCOME_V1 credentials (ECDSA P-256)",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "start": "tsx --env-file-if-exists=../../.env src/server.ts",

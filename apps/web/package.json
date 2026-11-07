@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Holder wallet, issuer portal and verifier dashboard with in-browser proof generation",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

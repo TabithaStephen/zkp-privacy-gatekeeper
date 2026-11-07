@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Small Express middleware: demo role tokens, rate limits, security headers",
+  "license": "MIT",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

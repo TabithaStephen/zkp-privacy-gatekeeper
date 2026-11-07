@@ -215,6 +215,10 @@ This is a prototype. Its known limits are stated plainly
 | First proof ≈ 9 s in the browser | Preload the CRS and WASM while the user reviews the request |
 | Only Chromium tested; no TLS in local development | Cross-browser tests; HTTPS deployment |
 
+## License
+
+[MIT](LICENSE) © 2026 TabithaStephen.
+
 ## Acknowledgements
 
 Noir and Barretenberg are developed by the Noir and Aztec teams. This project uses their
