@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Independent verifier: creates proof requests and verifies UltraHonk proofs with bb.js",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "start": "tsx --env-file-if-exists=../../.env src/server.ts",

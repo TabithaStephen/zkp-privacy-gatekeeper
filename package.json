@@ -2,6 +2,7 @@
   "name": "zkp-privacy-gatekeeper",
   "private": true,
   "description": "Privacy-preserving financial eligibility checks with zero-knowledge proofs (Noir + Barretenberg)",
+  "license": "MIT",
   "type": "module",
   "workspaces": [
     "packages/*",
