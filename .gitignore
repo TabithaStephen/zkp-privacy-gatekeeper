@@ -56,3 +56,6 @@ Thumbs.db
 
 # Temporary prover inputs written by scripts/e2e.sh
 e2e_*.toml
+
+# Generated prover inputs from experiments/signature-schemes/run.mjs
+experiments/**/case_*.toml
