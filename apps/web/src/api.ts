@@ -1,4 +1,4 @@
-import type { Credential, IssuerInfo, ProofRequest, ProofSubmission } from './zk/types.ts';
+import type { AuditEntry, Credential, IssuerInfo, ProofRequest, ProofSubmission } from './zk/types.ts';
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...init, headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) } });
@@ -16,6 +16,7 @@ export const issuerApi = {
 export const verifierApi = {
   create: (b: { verifierName: string; minimumIncome: string }) => post<ProofRequest>('/api/verifier/requests', b),
   list: () => call<ProofRequest[]>('/api/verifier/requests'),
+  audit: (limit = 15) => call<AuditEntry[]>(`/api/verifier/audit?limit=${limit}`),
   get: (id: string) => call<ProofRequest>(`/api/verifier/requests/${encodeURIComponent(id)}`),
   submit: (id: string, s: ProofSubmission) => post<ProofRequest>(`/api/verifier/requests/${encodeURIComponent(id)}/proof`, s),
   decline: (id: string) => post<ProofRequest>(`/api/verifier/requests/${encodeURIComponent(id)}/decline`, {}),

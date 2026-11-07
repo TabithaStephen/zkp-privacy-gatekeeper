@@ -50,8 +50,9 @@ const statusStyle: Record<RequestStatus, string> = {
   ELIGIBLE: 'border-ok/40 bg-ok/10 text-ok',
   NOT_ELIGIBLE: 'border-warn/40 bg-warn/10 text-warn',
   INVALID: 'border-bad/40 bg-bad/10 text-bad',
+  EXPIRED: 'border-navy-600 bg-navy-850 text-muted line-through decoration-muted/50',
 };
-const statusLabel: Record<RequestStatus, string> = { PENDING: 'Pending', ELIGIBLE: 'Eligible', NOT_ELIGIBLE: 'Not eligible', INVALID: 'Invalid' };
+const statusLabel: Record<RequestStatus, string> = { PENDING: 'Pending', ELIGIBLE: 'Eligible', NOT_ELIGIBLE: 'Not eligible', INVALID: 'Invalid', EXPIRED: 'Expired' };
 
 export function StatusBadge({ status }: { status: RequestStatus }) {
   return (

@@ -15,7 +15,7 @@ const cred: Credential = {
 };
 const req: ProofRequest = {
   id: 'r1', verifierName: 'Demo Lender', minimumIncome: '800000', currentTime: '1500',
-  challenge: '0x' + 'ab'.repeat(31).padStart(64, '0'), createdAt: '', status: 'PENDING',
+  challenge: '0x' + 'ab'.repeat(31).padStart(64, '0'), createdAt: '', expiresAt: '2100', status: 'PENDING',
 };
 
 describe('holder precheck', () => {

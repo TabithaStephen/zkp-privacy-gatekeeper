@@ -8,6 +8,7 @@
  *   npm run build -w @zkpg/web && node apps/web/e2e/full-flow.mjs [--screenshots]
  */
 import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -53,22 +54,29 @@ async function assertPortFree(port) {
 }
 for (const port of [4001, 4002, 4173]) await assertPortFree(port);
 
-const issuerLog = start('issuer', 'npx', ['tsx', 'src/server.ts'], path.join(ROOT, 'apps/issuer-demo'), { ISSUER_PRIVATE_KEY_PATH: path.join(tmp, 'issuer.pem'), PORT: '4001' });
-const verifierLog = start('verifier', 'npx', ['tsx', 'src/server.ts'], path.join(ROOT, 'apps/verifier-api'), { PORT: '4002' });
-start('web', 'npx', ['vite', 'preview'], path.join(ROOT, 'apps/web'));
+// Fresh random role tokens for this run (never written to disk).
+const TOKENS = { ISSUER_API_TOKEN: crypto.randomBytes(32).toString('hex'), VERIFIER_API_TOKEN: crypto.randomBytes(32).toString('hex') };
+const issuerLog = start('issuer', 'npx', ['tsx', 'src/server.ts'], path.join(ROOT, 'apps/issuer-demo'), { ...TOKENS, ISSUER_PRIVATE_KEY_PATH: path.join(tmp, 'issuer.pem'), PORT: '4001' });
+const verifierLog = start('verifier', 'npx', ['tsx', 'src/server.ts'], path.join(ROOT, 'apps/verifier-api'), { ...TOKENS, VERIFIER_DB_PATH: path.join(tmp, 'verifier.sqlite'), PORT: '4002' });
+start('web', 'npx', ['vite', 'preview'], path.join(ROOT, 'apps/web'), TOKENS);
 
 let browser;
 let page;
 try {
   await waitFor('http://127.0.0.1:4001/api/issuer/public-key');
-  await waitFor('http://127.0.0.1:4002/api/verifier/requests');
+  await waitFor('http://127.0.0.1:4002/api/verifier/requests/unknown').catch(() => {});
+  await new Promise((r) => setTimeout(r, 1500));
   await waitFor('http://127.0.0.1:4173/');
 
   const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: '127.0.0.1,localhost' } : undefined;
   browser = await chromium.launch(proxy ? { proxy } : {});
   page = await browser.newPage({ viewport: { width: 1360, height: 900 }, deviceScaleFactor: takeShots ? 2 : 1 });
   const sent = [];
-  page.on('request', (r) => { if (r.url().includes('/api/verifier/') && r.method() === 'POST') sent.push({ url: r.url(), body: r.postData() ?? '' }); });
+  const browserHeaders = [];
+  page.on('request', (r) => {
+    browserHeaders.push(JSON.stringify(r.headers()));
+    if (r.url().includes('/api/verifier/') && r.method() === 'POST') sent.push({ url: r.url(), body: r.postData() ?? '' });
+  });
   page.on('pageerror', (e) => console.log('  [pageerror]', e.message));
   const shot = async (name) => { if (takeShots) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage: true }); } };
   const BASE = 'http://127.0.0.1:4173/';
@@ -136,12 +144,26 @@ try {
   const req2 = (await page.locator('text=Request ID').locator('xpath=following-sibling::p').innerText()).trim();
   await page.goto(`${BASE}#/holder?request=${req2}`);
   await page.getByText('Your credential does not meet this condition').waitFor();
+  check(await page.getByText(/has already asked you about a different threshold/).isVisible(), 'wallet warns that the verifier is asking a different threshold (probing signal)');
   check(await page.getByRole('checkbox').isDisabled(), 'consent and proving are unavailable when the condition is not met');
   await page.getByRole('button', { name: 'Decline request' }).click();
   await page.locator('[data-testid="holder-result"] [data-status="NOT_ELIGIBLE"]').waitFor();
   check(true, 'decline recorded as NOT_ELIGIBLE');
 
-  console.log('== 6. Privacy: everything the browser sent to the verifier');
+  console.log('== 6. Verifier audit log and role tokens');
+  await page.goto(`${BASE}#/verifier`);
+  await page.locator('[data-audit-event="DECISION"]').first().waitFor();
+  check(await page.locator('[data-audit-event="DECLINED"]').count() > 0, 'audit log shows decisions and the decline');
+  const auditText = await page.locator('text=Audit log').locator('xpath=ancestor::section').innerText();
+  check(!auditText.includes('950000') && !auditText.includes('9,50,000'), 'audit log shows no income');
+  const tokenSeen = browserHeaders.some((h) => h.includes(TOKENS.VERIFIER_API_TOKEN) || h.includes(TOKENS.ISSUER_API_TOKEN) || /authorization/i.test(h));
+  check(!tokenSeen, 'browser never sends or holds a role token (no Authorization header on any request)');
+  const bundle = fs.readdirSync(path.join(ROOT, 'apps/web/dist/assets')).filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(ROOT, 'apps/web/dist/assets', f), 'utf8')).join('');
+  check(!bundle.includes(TOKENS.VERIFIER_API_TOKEN) && !bundle.includes('VERIFIER_API_TOKEN') && !bundle.includes('ISSUER_API_TOKEN'), 'built JS bundle contains no role tokens or token variable names');
+  const direct = await fetch('http://127.0.0.1:4002/api/verifier/requests');
+  check(direct.status === 401, 'verifier API refuses to list requests without the verifier token (401)');
+
+  console.log('== 7. Privacy: everything the browser sent to the verifier');
   const proofPosts = sent.filter((s) => s.url.endsWith('/proof'));
   check(proofPosts.length === 2, `exactly two proof submissions (${sent.length} POSTs total)`);
   const keys = proofPosts.map((p) => Object.keys(JSON.parse(p.body)).sort().join(','));

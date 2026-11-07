@@ -90,6 +90,8 @@ export function HolderWallet({ initialRequestId }: { initialRequestId: string })
   }
 
   const decided = request && request.status !== 'PENDING';
+  const expired = !!request && (request.status === 'EXPIRED' || BigInt(request.expiresAt) * 1000n <= BigInt(Date.now()));
+  const otherThresholds = request ? wallet.recentThresholds(request.verifierName).filter((t) => t !== request.minimumIncome) : [];
 
   return (
     <div className="space-y-6">
@@ -136,7 +138,7 @@ export function HolderWallet({ initialRequestId }: { initialRequestId: string })
               <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
                 <p className="text-xs uppercase tracking-wider text-muted">{request.verifierName} asks you to prove</p>
                 <p className="mt-1 text-lg font-semibold">Annual income ≥ {formatInr(request.minimumIncome)}</p>
-                <p className="mt-1 text-xs text-muted">Requested {formatIso(request.createdAt)} · challenge <Mono>{short(request.challenge, 6)}</Mono></p>
+                <p className="mt-1 text-xs text-muted">Requested {formatIso(request.createdAt)} · respond by {formatUnix(request.expiresAt)} · challenge <Mono>{short(request.challenge, 6)}</Mono></p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -159,7 +161,16 @@ export function HolderWallet({ initialRequestId }: { initialRequestId: string })
                 </div>
               </div>
 
-              {decided && !result ? (
+              {otherThresholds.length > 0 && !result && (
+                <Notice tone="warn">
+                  {request.verifierName} has already asked you about {otherThresholds.length === 1 ? 'a different threshold' : `${otherThresholds.length} different thresholds`} in the last 24 hours
+                  ({otherThresholds.map((t) => formatInr(t)).join(', ')}). Answering many thresholds can let a verifier narrow down your income.
+                </Notice>
+              )}
+
+              {expired && !result ? (
+                <Notice tone="warn">This request has expired. Ask the verifier for a new one.</Notice>
+              ) : decided && !result ? (
                 <Notice tone="warn">This request has already been answered ({request.status}).</Notice>
               ) : credentials.length === 0 ? (
                 <Notice tone="warn">You need a credential to respond.</Notice>

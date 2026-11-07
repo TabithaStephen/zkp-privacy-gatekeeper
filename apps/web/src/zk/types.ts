@@ -20,7 +20,7 @@ export interface IssuerInfo {
   circuit: { x: string; y: string };
 }
 
-export type RequestStatus = 'PENDING' | 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'INVALID';
+export type RequestStatus = 'PENDING' | 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'INVALID' | 'EXPIRED';
 
 export interface ProofRequest {
   id: string;
@@ -29,9 +29,21 @@ export interface ProofRequest {
   currentTime: string;
   challenge: string;
   createdAt: string;
+  expiresAt: string; // unix seconds: respond before this
   status: RequestStatus;
   reason?: string;
   decidedAt?: string;
+}
+
+export interface AuditEntry {
+  id: number;
+  at: string;
+  event: string;
+  requestId?: string;
+  outcome?: string;
+  reason?: string;
+  issuerKid?: string;
+  proofDigest?: string;
 }
 
 /** Exactly what is sent to the verifier. Nothing else leaves the device. */
