@@ -5,7 +5,7 @@
   "description": "Milestone 2: test issuer signing (JS) against in-circuit verification (Noir) for candidate schemes",
   "scripts": {
     "sign": "node sign.mjs",
-    "test": "./run.sh"
+    "test": "node run.mjs"
   },
   "dependencies": {
     "@zk-kit/eddsa-poseidon": "1.1.0",
