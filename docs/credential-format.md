@@ -1,6 +1,7 @@
 # Credential format: `ZKPG_INCOME_V1`
 
-**Status:** implemented in [`packages/credentials`](../packages/credentials) (Milestone 2).
+**Status:** implemented in [`packages/credentials`](../packages/credentials) (Milestone 2) and verified
+in-circuit by [`circuits/credential-eligibility`](../circuits/credential-eligibility) (Milestone 3).
 Signature scheme chosen after testing: **ECDSA P-256 over SHA-256, low-s only**
 (see [`signature-scheme-evaluation.md`](signature-scheme-evaluation.md)).
 
@@ -14,7 +15,7 @@ All data is fictional. This is a prototype format, not a legal or regulatory cre
 | `annualIncomeInr` | u64 | Annual income in whole rupees | **yes, the value we protect** |
 | `issuedAt` | u64 | Unix time (seconds, UTC) the credential becomes valid | yes |
 | `expiresAt` | u64 | Unix time (seconds, UTC) after which it is invalid | yes (circuit checks it against a public date in M3) |
-| `credentialId` | u64 | Random identifier, reserved for revocation (later milestone) | yes |
+| `credentialId` | u64 | Random identifier, reserved for revocation (future work) | yes |
 
 Rules enforced when issuing and when verifying:
 - Every value is an integer in `0 … 2^64 − 1`, written as a **decimal string** in JSON
@@ -100,7 +101,7 @@ is **never sent to the verifier**.
 
 - **No holder binding yet.** Anyone who obtains a copy of a credential can use it. A
   later design could bind credentials to a holder key.
-- **No revocation yet.** `credentialId` is reserved for a status mechanism later.
+- **No revocation yet.** `credentialId` is reserved for a future status mechanism.
 - **Issuer key compromise.** An attacker with the private key can mint credentials for
   any income. Mitigations: keep the key outside the repo and browser, rotate keys, and
   have verifiers remove compromised `kid`s. A real deployment would use an HSM or KMS.

@@ -61,6 +61,10 @@ Proof size and verification time stay constant: this is a property of UltraHonk.
 Proving time grows with circuit size. Browser (WASM) proving will be slower than these
 native timings and must be measured in Milestone 4.
 
+> **Outcome (Milestones 4 and 6):** measured in Chromium with 4 threads: about 2.8 s per
+> proof once the CRS is cached, and about 9 s for the first proof. Acceptable for this
+> use, so the EdDSA fallback was not needed. See [benchmarks](benchmarks/README.md).
+
 ## 4. Findings
 
 **F1. Noir's ECDSA verifier requires "low-s" signatures.** For any ECDSA signature

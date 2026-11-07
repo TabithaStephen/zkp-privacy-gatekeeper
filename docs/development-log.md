@@ -478,3 +478,58 @@ experiments 11/11.
 
 See [benchmarks/README.md](benchmarks/README.md) for the final numbers from the run
 committed with this milestone.
+
+---
+
+## Milestone 7 — Portfolio release
+
+**Date:** 2026-11-07 · **Branch:** `milestone-7/portfolio-release`
+
+### Reproducibility check (fresh clone of `main` from GitHub)
+
+Every documented command was run in a new clone, with only nargo 1.0.0 and bb 6.0.0
+installed beforehand:
+
+| Step | Result |
+|---|---|
+| `npm ci` · `npm run setup` (`.env` created with mode 0600) | ✅ |
+| `npm run typecheck` · `npm test` (144) · `npm run build` | ✅ |
+| `nargo test` (11 + 6) · artifact `--check` · M1 `e2e.sh` · `test:circuit` (18) | ✅ |
+| README demo: `npm run issuer` / `verifier` / `web` | ✅ create via proxy 201, direct without token 401, COOP header present, no income in logs |
+| `npm run e2e` (Chromium, 24 checks) | ✅ |
+| Experiments `npm test` | ❌ → fixed (see below) |
+
+**Bug found:** `experiments/signature-schemes` `npm test` pointed to a non-existent
+`./run.sh` (since Milestone 2; it was always run as `node run.mjs` directly). Now
+`"test": "node run.mjs"`.
+
+### Done
+
+- **README rewritten for portfolio readers:**
+  - a two-minute explanation and exactly what is proven (public vs private);
+  - quickstart and demo walkthrough with screenshots;
+  - evidence (tests, benchmarks), security highlights, repository map, documentation
+    index, pinned stack;
+  - **limitations with concrete next steps**.
+- **[Interview guide](interview-guide.md):** the blueprint's eight questions, each with a
+  short spoken answer, detail and evidence links, plus likely follow-up questions.
+- **Stale wording fixed:** "planned"/"later milestone" phrasing, an outdated test count,
+  and the browser-timing outcome added to the signature evaluation.
+- **All 13 Markdown files link-checked** (files and heading anchors): one broken
+  emoji-heading anchor fixed.
+- **Claims re-checked against reality:**
+  - Removed a README claim about "CI-style tests" (there is no CI; the artifact check is
+    a script).
+  - Softened an interview-guide sentence that said tests "prove" impossibility.
+
+### Repository review
+
+- 108 tracked files; the largest are 6 screenshots (~0.4–0.5 MB each).
+- **Full-history scan:** no `.env`, key, database, prover-input or credential file was
+  ever added, and no private-key or token pattern appears in any commit.
+- History: conventional commits, one PR per milestone, no force-pushes.
+
+### Project totals
+
+8 milestones (0–7) · 179 automated tests + 24 browser checks · 52,416-gate circuit ·
+in-browser proving ≈ 2.8 s warm (Chromium, 4 threads).

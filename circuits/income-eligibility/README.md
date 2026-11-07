@@ -20,7 +20,7 @@ fn main(income: u64, minimum_income: pub u64) {
 What the verifier receives: the proof (14,656 bytes), the public inputs (32 bytes: the
 threshold) and, separately and once per circuit, the verification key. Not the income.
 
-## ⚠️ Limitation
+## Limitation
 
 Nothing ties `income` to a bank. A prover can type any number into the private input
 and produce a valid proof. This circuit demonstrates a genuine ZKP workflow only.
