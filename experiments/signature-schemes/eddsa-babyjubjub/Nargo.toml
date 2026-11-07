@@ -1,0 +1,9 @@
+[package]
+name = "eddsa_babyjubjub_experiment"
+type = "bin"
+authors = ["TabithaStephen"]
+compiler_version = ">=1.0.0"
+
+[dependencies]
+eddsa = { tag = "master", git = "https://github.com/noir-lang/eddsa" }  # UNRELEASED: v0.1.3 does not compile on Noir 1.0.0; tested at commit 1ed4e55
+poseidon = { tag = "v0.3.0", git = "https://github.com/noir-lang/poseidon" }

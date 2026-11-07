@@ -126,3 +126,80 @@ own source at the `v1.0.0` tag. For Milestone 4, the browser library must be
 - **No issuer binding.** The prover chooses `income` freely. Milestones 2–3 fix this.
 - No challenge/nonce yet, so a proof can be replayed (Milestone 5).
 - Timings are from a single run in a cloud container, not a benchmark.
+
+---
+
+## Milestone 2 — Issuer credential prototype
+
+**Date:** 2026-11-07 · **Branch:** `milestone-2/issuer-credential`
+
+### Part A: signature-scheme compatibility experiments (done)
+
+As required, no scheme was chosen before testing real signing against in-circuit
+verification. Full write-up: [`signature-scheme-evaluation.md`](signature-scheme-evaluation.md).
+
+- Built two experiment circuits (`experiments/signature-schemes/`): **ECDSA P-256** and
+  **EdDSA BabyJubJub-Poseidon**. Each verifies an issuer signature over a fictional
+  credential and checks the threshold.
+- A Node test runner (`run.mjs`) signs in JS with throwaway in-memory keys, writes the
+  circuit inputs, runs `nargo execute`, and proves and verifies valid cases with `bb`.
+- **Results:** 11/11 expected outcomes matched, in 3 independent runs with fresh keys.
+  Measured cost: ECDSA 52,416 gates and ≈0.9 s to prove; EdDSA 9,420 gates and ≈0.27 s.
+
+### Findings worth remembering
+
+- Noir's ECDSA verifier accepts only **low-s** signatures, while Node's `crypto` returns
+  either form. The first run's one failure came from exactly this, in a test
+  signature that hadn't been normalised.
+- The released `noir-lang/eddsa` (v0.1.3) **does not compile** on Noir 1.0.0. Only its
+  unreleased `master` branch works.
+- `@zk-kit/eddsa-poseidon` 1.1.0's ESM build is broken; its CommonJS build works.
+
+### Decision
+
+**ECDSA P-256 with low-s normalisation**, approved after the experiments.
+
+### Part B: issuer credential implementation (done)
+
+- **Format spec:** [`credential-format.md`](credential-format.md). The canonical message is
+  48 bytes: a schema tag plus 5 u64 claims, big-endian. In JSON, numbers are decimal
+  strings, because JS numbers lose precision above 2^53.
+- **`packages/credentials`** (TypeScript, strict):
+  - encoding with an independent Python test vector,
+  - low-s ECDSA signing and verification,
+  - key generation and storage (PEM, mode 0600, refuses to overwrite, git-ignored `keys/`),
+  - the public key document, with `kid` = RFC 7638 JWK thumbprint,
+  - `issueCredential()` / `verifyCredential()` with typed failure reasons.
+- **CLIs:** `npm run keygen`, `npm run issue`. The terminal summary omits the income.
+
+### Tests (actual results)
+
+- **Vitest: 56/56 passed** (encoding 16, ECDSA 5, keys 6, credential 29). Covered:
+  - valid issue → verify, including after a JSON round trip;
+  - tampering with each of the 5 claims, or with the signature, is rejected;
+  - the high-s twin is rejected even though plain ECDSA accepts it;
+  - an untrusted issuer, and a forged credential claiming the trusted `kid`, are rejected;
+  - expired credentials (at and after `expiresAt`) and not-yet-valid credentials are rejected;
+  - 10 kinds of malformed input are rejected without throwing;
+  - failure details never contain the income;
+  - private key material never appears in any output;
+  - key rotation and removal work.
+- `tsc --noEmit` (strict): clean.
+- Manual CLI check: key written with mode 0600; a second `keygen` refuses to overwrite;
+  a credential issued from the CLI verifies against the published key; changing its
+  income gives `INVALID_SIGNATURE`; Git ignores the key and the credential.
+- Regression: Milestone 1 `nargo test` 6/6, `e2e.sh` all passed; signature experiments 11/11.
+
+### Tooling note
+
+npm 10.9.9 crashes ("reading 'edgesOut'") while resolving vitest 5.0.5's optional
+peer dependencies; bisecting showed vitest alone triggers it. Fixed with a package-level
+`.npmrc` (`legacy-peer-deps=true`) plus an explicitly pinned `vite`. This does not
+weaken security: it only stops npm auto-installing peer packages.
+
+### Known limitations
+
+- **Not yet in-circuit.** The circuit still accepts any income; Milestone 3 connects
+  the credential to the proof.
+- No holder binding and no revocation yet (see `credential-format.md` §6).
+- The demo issuer key is a local file. Production would use an HSM or KMS.
