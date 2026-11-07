@@ -126,3 +126,36 @@ own source at the `v1.0.0` tag. For Milestone 4, the browser library must be
 - **No issuer binding.** The prover chooses `income` freely. Milestones 2–3 fix this.
 - No challenge/nonce yet, so a proof can be replayed (Milestone 5).
 - Timings are from a single run in a cloud container, not a benchmark.
+
+---
+
+## Milestone 2 — Issuer credential prototype (in progress)
+
+**Date:** 2026-11-07 · **Branch:** `milestone-2/issuer-credential`
+
+### Part A: signature-scheme compatibility experiments (done)
+
+As required, no scheme was chosen before testing real signing against in-circuit
+verification. Full write-up: [`signature-scheme-evaluation.md`](signature-scheme-evaluation.md).
+
+- Built two experiment circuits (`experiments/signature-schemes/`): **ECDSA P-256** and
+  **EdDSA BabyJubJub-Poseidon**. Each verifies an issuer signature over a fictional
+  credential and checks the threshold.
+- A Node test runner (`run.mjs`) signs in JS with throwaway in-memory keys, writes the
+  circuit inputs, runs `nargo execute`, and proves and verifies valid cases with `bb`.
+- **Results:** 11/11 expected outcomes matched, in 3 independent runs with fresh keys.
+  Measured cost: ECDSA 52,416 gates and ≈0.9 s to prove; EdDSA 9,420 gates and ≈0.27 s.
+
+### Findings worth remembering
+
+- Noir's ECDSA verifier accepts only **low-s** signatures, while Node's `crypto` returns
+  either form. The first run's one failure came from exactly this, in a test
+  signature that hadn't been normalised.
+- The released `noir-lang/eddsa` (v0.1.3) **does not compile** on Noir 1.0.0. Only its
+  unreleased `master` branch works.
+- `@zk-kit/eddsa-poseidon` 1.1.0's ESM build is broken; its CommonJS build works.
+
+### Pending
+
+- Scheme decision (recommendation: ECDSA P-256 with low-s normalisation).
+- Part B: credential format spec, issuer signing module, public-key exposure, signature tests.
