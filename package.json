@@ -10,6 +10,7 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "setup": "node scripts/setup-env.mjs",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",

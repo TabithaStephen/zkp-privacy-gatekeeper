@@ -4,26 +4,38 @@
  * Security notes:
  *  - The signing key is loaded server-side only; it is never sent to clients.
  *  - Logs never contain income values or full credentials (safe-logging rule).
- *  - Access control for this demo role is added in Milestone 5.
+ *  - Issuing requires the issuer role token (demo access control); the public key is public.
+ *  - Issuance is rate-limited.
  */
 import express, { type Request, type Response } from 'express';
 import type { KeyObject } from 'node:crypto';
 import { CredentialFormatError, issueCredential, issuerPublicInfo, MAX_VALIDITY_SECONDS } from '@zkpg/credentials';
+import { rateLimit, requireRoleToken, securityHeaders } from '@zkpg/server-security';
 
 const DECIMAL = /^(0|[1-9][0-9]*)$/;
 const ALLOWED_FIELDS = new Set(['subjectId', 'annualIncomeInr', 'validityDays']);
 
-export function createIssuerApp(privateKey: KeyObject, log: (msg: string) => void = console.log) {
+export interface IssuerOptions {
+  issuerToken: string;
+  issueLimit?: { windowMs: number; max: number };
+  log?: (msg: string) => void;
+}
+
+export function createIssuerApp(privateKey: KeyObject, opts: IssuerOptions) {
+  const log = opts.log ?? console.log;
   const app = express();
   const publicInfo = issuerPublicInfo(privateKey);
+  const issuerOnly = requireRoleToken('issuer', opts.issuerToken, (req) => log(`[issuer] auth denied ${req.method} ${req.path}`));
+  const issueLimiter = rateLimit({ ...(opts.issueLimit ?? { windowMs: 60_000, max: 30 }), onLimited: () => log('[issuer] rate limited') });
   app.disable('x-powered-by');
+  app.use(securityHeaders);
   app.use(express.json({ limit: '4kb' }));
 
   app.get('/api/issuer/public-key', (_req: Request, res: Response) => {
     res.json({ name: 'Fictional Bank of Example (demo issuer)', ...publicInfo });
   });
 
-  app.post('/api/issuer/credentials', (req: Request, res: Response) => {
+  app.post('/api/issuer/credentials', issuerOnly, issueLimiter, (req: Request, res: Response) => {
     const body = req.body as Record<string, unknown> | undefined;
     if (!body || typeof body !== 'object') return res.status(400).json({ error: 'JSON body required' });
     const extra = Object.keys(body).filter((k) => !ALLOWED_FIELDS.has(k));
