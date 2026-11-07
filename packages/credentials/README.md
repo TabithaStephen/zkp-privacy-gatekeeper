@@ -4,15 +4,16 @@ The `ZKPG_INCOME_V1` credential: canonical encoding, simulated issuer signing wi
 **ECDSA P-256 (low-s)**, issuer public-key publishing and credential verification.
 Format spec: [`docs/credential-format.md`](../../docs/credential-format.md).
 
-Shared by the issuer now, and by the holder and verifier in later milestones.
-All data is fictional.
+Shared by the issuer service, the holder-side input builder and the verifier's
+public-input policy. All data is fictional.
 
 ## Use
 
 ```bash
 cd packages/credentials
 npm install
-npm test                 # 56 Vitest tests
+npm test                 # 70 Vitest unit tests
+npm run test:circuit     # 18 tests with REAL proofs (needs nargo 1.0.0 + bb 6.0.0)
 npm run typecheck        # TypeScript strict mode
 
 npm run keygen           # demo issuer key -> keys/issuer.pem (0600, git-ignored)
@@ -31,6 +32,8 @@ deliberately leaves out the income.
 | `src/ecdsa.ts` | P-256 sign/verify with the low-s rule Noir's circuit verifier requires |
 | `src/keys.ts` | Key generation, 0600 PEM storage (no overwrite), public key document, RFC 7638 `kid` |
 | `src/credential.ts` | `issueCredential()`, `verifyCredential()` with typed failure reasons |
+| `src/circuit-inputs.ts` | Holder side: credential + request → circuit inputs |
+| `src/public-inputs.ts` | Verifier side: decode and check a proof's public inputs |
 
 `verifyCredential()` returns one of: `valid`, `MALFORMED`, `UNSUPPORTED_TYPE`,
 `UNKNOWN_ISSUER`, `NON_CANONICAL_SIGNATURE`, `INVALID_SIGNATURE`, `NOT_YET_VALID`,

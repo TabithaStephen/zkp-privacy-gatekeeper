@@ -1,7 +1,7 @@
 # Architecture
 
-How the parts fit together as of **Milestone 5**. Threats and controls are in
-[security-model.md](security-model.md).
+How the parts fit together in the released prototype (Milestone 7). Threats and controls
+are in [security-model.md](security-model.md); test evidence is in [test-report.md](test-report.md).
 
 ## Roles and data flow
 
