@@ -6,10 +6,10 @@ A portfolio prototype for **privacy-preserving financial eligibility checks** us
 genuine Zero-Knowledge Proofs (ZKPs), written in [Noir](https://noir-lang.org) and
 proven with [Barretenberg](https://github.com/AztecProtocol/aztec-packages/tree/master/barretenberg).
 
-> **Status: Milestone 2 — issuer credentials.** A Noir circuit proves `income >= threshold`
-> with real UltraHonk proofs (M1), and a simulated issuer signs income credentials with
-> ECDSA P-256 (M2). The two are **not yet connected**: that is Milestone 3. The API and
-> UI are not built yet.
+> **Status: Milestone 3 — credential-aware ZKP.** A Noir circuit proves that an
+> issuer-signed (ECDSA P-256) income credential is valid and meets a threshold, with real
+> UltraHonk proofs, without revealing the income. Proving uses the CLI; the browser UI
+> (M4) and verification API (M5) are **not built yet**.
 > See
 > [`docs/development-log.md`](docs/development-log.md) for what has actually been built and tested.
 
@@ -48,7 +48,7 @@ Issuer ──signed credential──▶ Holder ──proof + public inputs──
 | 0 | Environment & repository setup | ✅ Done |
 | 1 | First real ZKP (income ≥ threshold) | ✅ Done (no issuer binding yet) |
 | 2 | Issuer credential prototype (signing) | ✅ Done (ECDSA P-256, not yet in-circuit) |
-| 3 | Credential-aware ZKP | ⏳ Planned |
+| 3 | Credential-aware ZKP | ✅ Done |
 | 4 | Holder / issuer / verifier UI | ⏳ Planned |
 | 5 | Independent verification API (replay, expiry) | ⏳ Planned |
 | 6 | Security & performance tests | ⏳ Planned |
@@ -76,6 +76,16 @@ npm run issue -- --subject 1001 --income 950000 --out demo.credential.json
 
 Design docs: [credential format](docs/credential-format.md) ·
 [signature scheme evaluation](docs/signature-scheme-evaluation.md)
+
+## Prove a credential (Milestone 3)
+
+```bash
+cd circuits/credential-eligibility && nargo test     # 11 circuit tests
+cd ../../packages/credentials && npm run test:circuit # 18 real-proof tests
+```
+
+See [`docs/architecture.md`](docs/architecture.md) for what is proven, what stays
+private and what the verifier must check.
 
 ## Planned stack
 

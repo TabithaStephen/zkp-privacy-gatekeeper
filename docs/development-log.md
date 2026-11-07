@@ -203,3 +203,70 @@ weaken security: it only stops npm auto-installing peer packages.
   the credential to the proof.
 - No holder binding and no revocation yet (see `credential-format.md` §6).
 - The demo issuer key is a local file. Production would use an HSM or KMS.
+
+---
+
+## Milestone 3 — Credential-aware ZKP
+
+**Date:** 2026-11-07 · **Branch:** `milestone-3/credential-zkp`
+
+### Done
+
+- **Circuit `circuits/credential-eligibility`.** Verifies the ECDSA P-256 issuer signature
+  over the 48-byte credential encoding, checks `issued_at <= current_time < expires_at`
+  and `income >= minimum_income`, and binds a public `challenge`. Public inputs: issuer
+  key, threshold, time, challenge. Everything else is private.
+- **Holder side:** `buildCircuitInputs()` pre-checks the credential and maps it to circuit inputs.
+- **Verifier side:** `decodePublicInputs()` + `checkPublicInputs()` (trusted key,
+  threshold, challenge, clock skew).
+- **Test vectors:** `gen-noir-test-vectors.ts` signs with the real TS issuer and a
+  throwaway in-memory key, so only public values are committed.
+- **Docs:** `docs/architecture.md`, circuit README.
+
+### Tests (actual results)
+
+- `nargo test` (credential-eligibility): **11/11**. Covers valid; exact threshold and
+  first/last valid second; tampered income, tampered expiry, wrong key, tampered
+  signature, signature from another credential (all `invalid issuer signature`);
+  expired; not yet valid; genuine-but-below-threshold; encoding vector.
+- Vitest unit tests: **70/70** (14 new: input builder and public-input checks).
+- **Real-proof integration tests (`npm run test:circuit`): 18/18.**
+  - A valid proof verifies and passes the policy.
+  - `public_inputs` is exactly key/threshold/time/challenge. The income, credential ID,
+    expiry and signature `r`/`s` are not found in the proof or public inputs.
+  - No witness can be produced for: below threshold, tampered income, wrong key, expired,
+    not yet valid.
+  - A **self-signed forgery yields a proof that `bb verify` accepts**, rejected only by
+    the verifier's trusted-key check (`UNTRUSTED_ISSUER`). Relabelling it with the
+    trusted key fails `bb verify`.
+  - Altering the challenge, raising or lowering the threshold, or moving `current_time`
+    after proving all fail `bb verify`. A replayed proof gives `CHALLENGE_MISMATCH`.
+    Tampered and truncated proofs fail.
+- Measurements: 52,416 gates; proof 14,656 B; public inputs 2,144 B; prove ≈ 0.8 s; verify ≈ 11 ms.
+
+### Decisions
+
+| Decision | Choice | Why |
+|---|---|---|
+| New circuit vs. editing M1 | New `circuits/credential-eligibility` | Keeps the M1 learning circuit intact for comparison |
+| Issuer key in public inputs | Raw key (67 public fields) | SHA-256(key) variant measured: +11% gates, saves ≈1 KB. Not worth it |
+| `challenge` | Public input, no constraint | Public inputs are bound into the proof (tested). Server-side used-challenge tracking is M5 |
+| Expiry | Checked in-circuit against public `current_time` | The verifier checks `current_time` is close to now (default skew 300 s) |
+
+### Concepts
+
+- **A proof is only as good as the verifier's checks on its public inputs.** The
+  self-signed forgery test shows that `bb verify` passing does not mean the issuer is trusted.
+- Witness and prover files are written outside the repo (OS temp dir) because they hold
+  private data.
+
+### Lessons / fixes
+
+- Noir 1.0.0 has no `#[cfg(test)]` attribute. Test modules are plain modules, and
+  `#[test]` functions add no constraints (same gate count either way).
+
+### Known limitations
+
+- Proving runs through the nargo/bb CLIs; in-browser proving is Milestone 4.
+- Used-challenge tracking, request expiry and the HTTP API are Milestone 5.
+- No holder binding and no revocation (see `credential-format.md` §6).
