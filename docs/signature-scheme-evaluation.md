@@ -1,6 +1,6 @@
 # Issuer signature scheme: evaluation
 
-**Status:** experiments complete. **The final choice is pending review.**
+**Status:** experiments complete. **Decision: ECDSA P-256 with low-s normalisation** (approved 2026-11-07).
 **Date:** 2026-11-07 · Noir `nargo` 1.0.0 · Barretenberg `bb` 6.0.0 (UltraHonk)
 **Code:** [`experiments/signature-schemes/`](../experiments/signature-schemes/)
 
@@ -111,4 +111,6 @@ Reasoning:
 - Its costs are **measured and acceptable** natively (< 1 s to prove). The open risk
   is browser proving time, so Milestone 4 will measure that before committing the UI.
 
-**Decision: pending review.**
+**Decision (2026-11-07): ECDSA P-256 approved.** Implemented in
+[`packages/credentials`](../packages/credentials); format in
+[`credential-format.md`](credential-format.md).

@@ -129,7 +129,7 @@ own source at the `v1.0.0` tag. For Milestone 4, the browser library must be
 
 ---
 
-## Milestone 2 — Issuer credential prototype (in progress)
+## Milestone 2 — Issuer credential prototype
 
 **Date:** 2026-11-07 · **Branch:** `milestone-2/issuer-credential`
 
@@ -155,7 +155,51 @@ verification. Full write-up: [`signature-scheme-evaluation.md`](signature-scheme
   unreleased `master` branch works.
 - `@zk-kit/eddsa-poseidon` 1.1.0's ESM build is broken; its CommonJS build works.
 
-### Pending
+### Decision
 
-- Scheme decision (recommendation: ECDSA P-256 with low-s normalisation).
-- Part B: credential format spec, issuer signing module, public-key exposure, signature tests.
+**ECDSA P-256 with low-s normalisation**, approved after the experiments.
+
+### Part B: issuer credential implementation (done)
+
+- **Format spec:** [`credential-format.md`](credential-format.md). The canonical message is
+  48 bytes: a schema tag plus 5 u64 claims, big-endian. In JSON, numbers are decimal
+  strings, because JS numbers lose precision above 2^53.
+- **`packages/credentials`** (TypeScript, strict):
+  - encoding with an independent Python test vector,
+  - low-s ECDSA signing and verification,
+  - key generation and storage (PEM, mode 0600, refuses to overwrite, git-ignored `keys/`),
+  - the public key document, with `kid` = RFC 7638 JWK thumbprint,
+  - `issueCredential()` / `verifyCredential()` with typed failure reasons.
+- **CLIs:** `npm run keygen`, `npm run issue`. The terminal summary omits the income.
+
+### Tests (actual results)
+
+- **Vitest: 56/56 passed** (encoding 16, ECDSA 5, keys 6, credential 29). Covered:
+  - valid issue → verify, including after a JSON round trip;
+  - tampering with each of the 5 claims, or with the signature, is rejected;
+  - the high-s twin is rejected even though plain ECDSA accepts it;
+  - an untrusted issuer, and a forged credential claiming the trusted `kid`, are rejected;
+  - expired credentials (at and after `expiresAt`) and not-yet-valid credentials are rejected;
+  - 10 kinds of malformed input are rejected without throwing;
+  - failure details never contain the income;
+  - private key material never appears in any output;
+  - key rotation and removal work.
+- `tsc --noEmit` (strict): clean.
+- Manual CLI check: key written with mode 0600; a second `keygen` refuses to overwrite;
+  a credential issued from the CLI verifies against the published key; changing its
+  income gives `INVALID_SIGNATURE`; Git ignores the key and the credential.
+- Regression: Milestone 1 `nargo test` 6/6, `e2e.sh` all passed; signature experiments 11/11.
+
+### Tooling note
+
+npm 10.9.9 crashes ("reading 'edgesOut'") while resolving vitest 5.0.5's optional
+peer dependencies; bisecting showed vitest alone triggers it. Fixed with a package-level
+`.npmrc` (`legacy-peer-deps=true`) plus an explicitly pinned `vite`. This does not
+weaken security: it only stops npm auto-installing peer packages.
+
+### Known limitations
+
+- **Not yet in-circuit.** The circuit still accepts any income; Milestone 3 connects
+  the credential to the proof.
+- No holder binding and no revocation yet (see `credential-format.md` §6).
+- The demo issuer key is a local file. Production would use an HSM or KMS.

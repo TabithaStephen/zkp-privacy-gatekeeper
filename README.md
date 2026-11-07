@@ -6,8 +6,10 @@ A portfolio prototype for **privacy-preserving financial eligibility checks** us
 genuine Zero-Knowledge Proofs (ZKPs), written in [Noir](https://noir-lang.org) and
 proven with [Barretenberg](https://github.com/AztecProtocol/aztec-packages/tree/master/barretenberg).
 
-> **Status: Milestone 1 — first real ZKP.** A Noir circuit proves `income >= threshold`
-> with real UltraHonk proofs. Issuer credentials, the API and the UI are **not built yet**.
+> **Status: Milestone 2 — issuer credentials.** A Noir circuit proves `income >= threshold`
+> with real UltraHonk proofs (M1), and a simulated issuer signs income credentials with
+> ECDSA P-256 (M2). The two are **not yet connected**: that is Milestone 3. The API and
+> UI are not built yet.
 > See
 > [`docs/development-log.md`](docs/development-log.md) for what has actually been built and tested.
 
@@ -45,7 +47,7 @@ Issuer ──signed credential──▶ Holder ──proof + public inputs──
 |---|---|---|
 | 0 | Environment & repository setup | ✅ Done |
 | 1 | First real ZKP (income ≥ threshold) | ✅ Done (no issuer binding yet) |
-| 2 | Issuer credential prototype (signing) | ⏳ Planned |
+| 2 | Issuer credential prototype (signing) | ✅ Done (ECDSA P-256, not yet in-circuit) |
 | 3 | Credential-aware ZKP | ⏳ Planned |
 | 4 | Holder / issuer / verifier UI | ⏳ Planned |
 | 5 | Independent verification API (replay, expiry) | ⏳ Planned |
@@ -62,6 +64,18 @@ cd circuits/income-eligibility
 nargo test           # circuit unit tests
 ./scripts/e2e.sh     # real proof generation + verification + attack checks
 ```
+
+## Issue a credential (Milestone 2)
+
+```bash
+cd packages/credentials
+npm install && npm test
+npm run keygen                                   # demo issuer key (git-ignored)
+npm run issue -- --subject 1001 --income 950000 --out demo.credential.json
+```
+
+Design docs: [credential format](docs/credential-format.md) ·
+[signature scheme evaluation](docs/signature-scheme-evaluation.md)
 
 ## Planned stack
 
