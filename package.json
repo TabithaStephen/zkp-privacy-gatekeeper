@@ -2,6 +2,7 @@
   "name": "zkp-privacy-gatekeeper",
   "private": true,
   "description": "Privacy-preserving financial eligibility checks with zero-knowledge proofs (Noir + Barretenberg)",
+  "type": "module",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -17,6 +18,8 @@
     "issuer": "npm run start -w @zkpg/issuer-demo",
     "verifier": "npm run start -w @zkpg/verifier-api",
     "web": "npm run dev -w @zkpg/web",
-    "e2e": "npm run build -w @zkpg/web && node apps/web/e2e/full-flow.mjs"
-  }
+    "e2e": "npm run build -w @zkpg/web && node apps/web/e2e/full-flow.mjs",
+    "bench": "npm run build -w @zkpg/web && tsx bench/run.ts"
+  },
+  "devDependencies": {}
 }

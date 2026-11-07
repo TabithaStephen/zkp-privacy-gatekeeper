@@ -1,0 +1,5 @@
+{
+  "extends": "../packages/credentials/tsconfig.json",
+  "compilerOptions": { "lib": ["ES2023", "DOM"], "types": ["node"] },
+  "include": ["run.ts"]
+}

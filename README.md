@@ -6,7 +6,11 @@ A portfolio prototype for **privacy-preserving financial eligibility checks** us
 genuine Zero-Knowledge Proofs (ZKPs), written in [Noir](https://noir-lang.org) and
 proven with [Barretenberg](https://github.com/AztecProtocol/aztec-packages/tree/master/barretenberg).
 
-> **Status: Milestone 5 — hardened verification.** The full workflow runs in the
+> **Status: Milestone 6 — security and performance tested.** 179 automated tests plus a
+> browser end-to-end suite; see the [test report](docs/test-report.md) and
+> [benchmarks](docs/benchmarks/README.md).
+>
+> **Milestone 5 — hardened verification.** The full workflow runs in the
 > browser (the holder **generates the proof locally**), and the verifier enforces
 > single-use, expiring requests with persistent state, a privacy-conscious audit log,
 > demo role tokens and rate limits. See the [security model](docs/security-model.md).
@@ -51,7 +55,7 @@ Issuer ──signed credential──▶ Holder ──proof + public inputs──
 | 3 | Credential-aware ZKP | ✅ Done |
 | 4 | Holder / issuer / verifier UI | ✅ Done |
 | 5 | Independent verification API (replay, expiry) | ✅ Done |
-| 6 | Security & performance tests | ⏳ Planned |
+| 6 | Security & performance tests | ✅ Done |
 | 7 | Portfolio release | ⏳ Planned |
 
 ## Try it (Milestone 1)
@@ -74,7 +78,7 @@ npm run keygen                                   # demo issuer key (git-ignored)
 npm run issue -- --subject 1001 --income 950000 --out demo.credential.json
 ```
 
-Design docs: [security model](docs/security-model.md) · [credential format](docs/credential-format.md) ·
+Design docs: [test report](docs/test-report.md) · [benchmarks](docs/benchmarks/README.md) · [security model](docs/security-model.md) · [credential format](docs/credential-format.md) ·
 [signature scheme evaluation](docs/signature-scheme-evaluation.md)
 
 ## Run the demo
@@ -100,6 +104,7 @@ create a request → **Open in holder wallet** → review → consent → genera
 ```bash
 npm test            # unit + API tests across all workspaces
 npm run e2e         # real browser (Chromium): full flow with in-browser proving
+npm run bench       # proof size and prove/verify timings (CLI, Node, Chromium)
 ```
 
 ## Prove a credential from the CLI (Milestone 3)

@@ -41,7 +41,12 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: { exclude: ['@aztec-foundation/bb.js', '@noir-lang/noir_js', '@noir-lang/acvm_js', '@noir-lang/noirc_abi'] },
     // bb.js (~5.4 MB WebAssembly glue) is loaded with a dynamic import only when the holder
     // generates a proof, so its size does not affect initial page load.
-    build: { target: 'es2022', chunkSizeWarningLimit: 6000 },
+    build: {
+      target: 'es2022',
+      chunkSizeWarningLimit: 6000,
+      // bench.html is a measurement page used by bench/run.ts; it is not linked from the app.
+      rollupOptions: { input: { main: path.resolve(import.meta.dirname, 'index.html'), bench: path.resolve(import.meta.dirname, 'bench.html') } },
+    },
     worker: { format: 'es' },
     test: { include: ['test/**/*.test.ts'] },
   };
