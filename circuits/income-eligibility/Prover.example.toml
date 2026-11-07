@@ -1,0 +1,8 @@
+# Example inputs with FICTIONAL values.
+# Copy to Prover.toml (which is git-ignored) before running `nargo execute`:
+#   cp Prover.example.toml Prover.toml
+#
+# income          -> PRIVATE witness: stays on the prover's machine.
+# minimum_income  -> PUBLIC input: the verifier sees this.
+income = "950000"
+minimum_income = "800000"
