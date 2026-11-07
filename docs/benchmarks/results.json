@@ -1,0 +1,101 @@
+{
+  "environment": {
+    "date": "2026-11-07T16:37:37.574Z",
+    "os": "Linux 6.18.44-fc-v310 (x64)",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logicalCores": 4,
+    "memoryGiB": 16,
+    "node": "v22.23.4",
+    "noirVersion": "1.0.0+275d3ab1a5c916c6ea73e8d6b943f685f574500c",
+    "noirJs": "1.0.0",
+    "bbJs": "6.0.0",
+    "bbCli": "6.0.0 (/root/.bb/bb)",
+    "runsPerConfig": 5
+  },
+  "witnessNoirJs": {
+    "n": 5,
+    "median": 13,
+    "min": 12,
+    "max": 75
+  },
+  "gates": 52416,
+  "nativeBbCli": {
+    "prove": {
+      "n": 5,
+      "median": 844,
+      "min": 776,
+      "max": 896
+    },
+    "verify": {
+      "n": 5,
+      "median": 20,
+      "min": 19,
+      "max": 23
+    },
+    "note": "includes process start-up"
+  },
+  "nodeBbJs_1t": {
+    "prove": {
+      "n": 5,
+      "median": 2767,
+      "min": 2665,
+      "max": 2985
+    },
+    "verify": {
+      "n": 5,
+      "median": 827,
+      "min": 794,
+      "max": 1064
+    }
+  },
+  "nodeBbJs_4t": {
+    "prove": {
+      "n": 5,
+      "median": 1157,
+      "min": 1035,
+      "max": 1196
+    },
+    "verify": {
+      "n": 5,
+      "median": 374,
+      "min": 344,
+      "max": 413
+    }
+  },
+  "browserChromium": {
+    "threads": 4,
+    "crossOriginIsolated": true,
+    "cold": {
+      "witnessMs": 155,
+      "proveMs": 8898,
+      "verifyMs": 752
+    },
+    "warm": {
+      "witness": {
+        "n": 4,
+        "median": 12,
+        "min": 10,
+        "max": 13
+      },
+      "prove": {
+        "n": 4,
+        "median": 2848,
+        "min": 2817,
+        "max": 3514
+      },
+      "verify": {
+        "n": 4,
+        "median": 838,
+        "min": 809,
+        "max": 879
+      }
+    }
+  },
+  "sizes": {
+    "proofBytes": 14656,
+    "publicInputs": 67,
+    "publicInputBytes": 2144,
+    "verificationKeyBytes": 3680,
+    "compiledArtifactBytes": 10176
+  }
+}
