@@ -425,3 +425,56 @@ New E2E checks:
 See [security-model.md §4](security-model.md#4-residual-risks-and-limitations-honest-list):
 in-memory, per-process rate limits; demo token auth instead of user login; no holder
 binding; no revocation; plain-localStorage wallet; probing reduced, not eliminated.
+
+---
+
+## Milestone 6 — Security and performance tests
+
+**Date:** 2026-11-07 · **Branch:** `milestone-6/security-performance`
+
+### Done
+
+- **New verifier tests** (`apps/verifier-api/test/robustness.test.ts`, 8):
+  - wrong verifier context, using two independent lender instances;
+  - error-message leak sweep across every endpoint;
+  - random proofs: 25 against bb.js directly with **genuine** public inputs, 3 through HTTP;
+  - 25 random proofs with random or foreign public inputs;
+  - recovery after garbage input;
+  - tokens sent in the wrong auth scheme or in the query string.
+- **Benchmark** (`npm run bench` → `bench/run.ts`):
+  - sizes;
+  - noir_js witness timing;
+  - native bb CLI, Node bb.js (1 and 4 threads), and Chromium (cold and warm).
+  - It writes `docs/benchmarks/results.json` and `README.md`, using a browser-only
+    `bench.html` page.
+- **[Test report](test-report.md):** each blueprint test-table row and security
+  principle, mapped to its tests and actual results; leak checks; findings; known gaps.
+
+### Tests (actual results)
+
+All suites pass: **179 automated tests** (nargo 11 + 6, credentials 70, test:circuit 18,
+server-security 10, issuer 14, verifier 39, web 11), browser E2E 24/24 checks, M1 e2e 7/7,
+experiments 11/11.
+
+### Problems found and fixed (honest record)
+
+1. **The robustness test was weaker than its name.** All 25 random proofs were rejected
+   by the public-input policy (`CHALLENGE_MISMATCH` / `MALFORMED_PUBLIC_INPUTS`), so
+   bb.js never saw them. Rewritten so random proofs carry the genuine public inputs of
+   their own request and must fail cryptographic verification.
+2. **The benchmark measured the wrong `bb`.** It reported native `bb verify` at ~59 ms
+   versus ~15 ms in isolation.
+   - First hypothesis (CPU contention from in-process bb.js threads) was tested by
+     reordering, and was **wrong**.
+   - Actual cause: under npm/npx, `node_modules/.bin/bb` is bb.js's **Node wrapper**,
+     adding ~45 ms of start-up to each call.
+   - Fix: the benchmark resolves the native binary (`$BB_BINARY`, `~/.bb/bb`, or `PATH`
+     excluding `node_modules`) and records its path. Native verify is now ≈ 21 ms
+     including spawn.
+3. The rate limiter (correctly) blocked the new robustness tests after 30 requests; the
+   limits are lifted only for those servers, since limits are tested separately.
+
+### Benchmarks
+
+See [benchmarks/README.md](benchmarks/README.md) for the final numbers from the run
+committed with this milestone.
