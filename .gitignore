@@ -1,0 +1,55 @@
+# ── Dependencies ─────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ── Build output ─────────────────────────────────────────
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# ── Noir / Barretenberg generated artifacts ──────────────
+# `nargo` writes compiled circuits and witnesses to target/.
+# Proofs and verification keys are regenerated from source, so they are not committed.
+target/
+proofs/
+*.gz
+*.vk
+*.proof
+
+# Prover.toml holds PRIVATE witness values (e.g. income).
+# Only the committed example file with fictional values is allowed.
+**/Prover.toml
+!**/Prover.example.toml
+
+# ── Secrets and keys — never commit ─────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.der
+secrets/
+keys/
+**/issuer-keys/
+
+# ── Runtime data (may contain audit records / challenges) ─
+*.sqlite
+*.sqlite3
+*.db
+data/
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ── OS / editor ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
